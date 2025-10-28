@@ -24,7 +24,7 @@ public class FairyFollow : MonoBehaviour
     private void Start()
     {
         _playerTransform = GameObject.FindWithTag("Player").GetComponent<Transform>();
-        _catchToLocation = GameObject.FindWithTag("CatchToLocation").GetComponent<Transform>();
+        //_catchToLocation = GameObject.FindWithTag("CatchToLocation").GetComponent<Transform>();
 
         if (_playerTransform == null) { Debug.Log(gameObject.name + " has activate defensive programming"); return; }
         if (_catchToLocation == null) { Debug.Log(gameObject.name + " has activate defensive programming"); return; }
