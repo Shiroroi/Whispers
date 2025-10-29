@@ -9,18 +9,14 @@ public class AnimationEventFunctionCall : MonoBehaviour
     public float offSetY = 1f;
     public SpriteRenderer spriteRenderer;
     public LayerMask enemyLayer;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    
     public void Awake()
     {
-        spriteRenderer = GetComponent<SpriteRenderer>(); // Get parrent transform, when parent scale.x is change to negative (flip)
-        // then can also change my offSetX to negative value
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     private void OnAttacking(float _attackNum)
     {
-        
-
-
         _attackAreaPosition = transform.position;
 
         offSetX = spriteRenderer.flipX ? -Mathf.Abs(offSetX) : Mathf.Abs(offSetX);
@@ -28,34 +24,34 @@ public class AnimationEventFunctionCall : MonoBehaviour
         _attackAreaPosition.x += offSetX;
         _attackAreaPosition.y += offSetY;
 
-
-
-
         Collider2D[] _hitColliders = Physics2D.OverlapBoxAll(_attackAreaPosition, attackSize, 0f, enemyLayer);
         
         foreach (Collider2D _hitCollider in _hitColliders)
         {
-
-            //_hitCollider.gameObject.GetComponent<Health>().TakeDamage(attackMultiplier * _attackNum);
+            // Get enemy health component
+            EnemyHealth enemyHealth = _hitCollider.gameObject.GetComponent<EnemyHealth>();
             
-
-
-
-            // find the collider that collide with us then use Enemy punya TakeDamage function
-            //_hitCollider.GetComponent<Health>().TakeDamage(attackDamage * isAttack);
-            // need to assign enemy to enemyLayer
+            if (enemyHealth != null)
+            {
+                // Calculate damage
+                float damage = attackMultiplier * _attackNum;
+                
+                // Calculate knockback direction (from player to enemy)
+                Vector2 knockbackDirection = (_hitCollider.transform.position - transform.position).normalized;
+                
+                // Deal damage with knockback direction
+                enemyHealth.TakeDamage(damage, knockbackDirection);
+                
+                Debug.Log("Hit " + _hitCollider.gameObject.name + " for " + damage + " damage!");
+            }
         }
-
-
     }
 
-    private void OnDrawGizmos() // Draw the visual of OverlapBoxAll()
+    private void OnDrawGizmos()
     {
         _attackAreaPosition = transform.position;
         _attackAreaPosition.x += offSetX;
         _attackAreaPosition.y += offSetY;
-
-
 
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireCube(_attackAreaPosition, attackSize);

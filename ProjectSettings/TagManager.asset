@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Fairy
   - Ground
+  - Enemy
   layers:
   - Default
   - TransparentFX
