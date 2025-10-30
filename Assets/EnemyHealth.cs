@@ -19,9 +19,17 @@ public class EnemyHealth : MonoBehaviour
     
     [Header("Knockback")]
     public float knockbackForce = 5f;
+    public float deathKnockbackMultiplier = 1.5f; // Extra knockback on death
+    public float deathDelay = 0.5f; // Time before enemy disappears after death
     private Rigidbody2D rb;
     
+    [Header("Screen Shake")]
+    public float shakeDuration = 0.2f;
+    public float shakeIntensity = 0.1f;
+    private Vector3 originalPosition;
+    
     private bool isFlashing = false;
+    private bool isShaking = false;
     
     void Start()
     {
@@ -32,6 +40,7 @@ public class EnemyHealth : MonoBehaviour
         if (spriteRenderer != null)
         {
             originalMaterial = spriteRenderer.material;
+            originalPosition = spriteRenderer.transform.localPosition;
         }
         
         // Use this transform if no blood spawn point assigned
@@ -51,15 +60,36 @@ public class EnemyHealth : MonoBehaviour
             StartCoroutine(DamageFlash());
         }
         
+        // Trigger shake effect
+        if (!isShaking)
+        {
+            StartCoroutine(ShakeEffect());
+        }
+        
         // Spawn blood effect
         SpawnBloodEffect();
         
-       
-        
-        // Check if dead
+        // Check if dead BEFORE applying knockback
         if (currentHealth <= 0)
         {
-            Die();
+            // Apply stronger knockback on death (HORIZONTAL ONLY)
+            if (rb != null)
+            {
+                Vector2 horizontalKnockback = new Vector2(hitDirection.x, 0).normalized * knockbackForce * deathKnockbackMultiplier;
+                rb.AddForce(horizontalKnockback, ForceMode2D.Impulse);
+            }
+            
+            // Delay death so knockback can play out
+            StartCoroutine(DelayedDeath());
+        }
+        else
+        {
+            // Normal knockback for non-lethal hits (HORIZONTAL ONLY)
+            if (rb != null)
+            {
+                Vector2 horizontalKnockback = new Vector2(hitDirection.x, 0).normalized * knockbackForce;
+                rb.AddForce(horizontalKnockback, ForceMode2D.Impulse);
+            }
         }
     }
     
@@ -114,5 +144,43 @@ public class EnemyHealth : MonoBehaviour
         
         // Destroy enemy
         Destroy(gameObject);
+    }
+    
+    IEnumerator ShakeEffect()
+    {
+        isShaking = true;
+        float elapsed = 0f;
+        
+        while (elapsed < shakeDuration)
+        {
+            // Random offset for shake
+            float offsetX = Random.Range(-shakeIntensity, shakeIntensity);
+            float offsetY = Random.Range(-shakeIntensity, shakeIntensity);
+            
+            spriteRenderer.transform.localPosition = originalPosition + new Vector3(offsetX, offsetY, 0);
+            
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        
+        // Return to original position
+        spriteRenderer.transform.localPosition = originalPosition;
+        isShaking = false;
+    }
+    
+    IEnumerator DelayedDeath()
+    {
+        // Disable AI so enemy stops moving towards player
+        EnemyAI enemyAI = GetComponent<EnemyAI>();
+        if (enemyAI != null)
+        {
+            enemyAI.enabled = false;
+        }
+        
+        // Wait for knockback to play out
+        yield return new WaitForSeconds(deathDelay);
+        
+        // Now actually die
+        Die();
     }
 }

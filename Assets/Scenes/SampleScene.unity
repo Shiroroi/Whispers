@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 105615706}
   - component: {fileID: 105615705}
   - component: {fileID: 105615708}
+  - component: {fileID: 105615709}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -235,9 +236,26 @@ MonoBehaviour:
   dashSpeed: 20
   dashDuration: 0.2
   dashCooldown: 0
-  currentMoveInput: 0
   isMeleeAttack: 1
   attackSpeed: 1.5
+--- !u!114 &105615709
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 105615704}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8562e037225649488ca4c054d95d709, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  maxHealth: 100
+  invincibilityDuration: 2
+  blinkSpeed: 0.1
+  knockbackForce: 30
+  knockbackDuration: 0.2
+  spriteRenderer: {fileID: 1705354510}
 --- !u!1 &338454659
 GameObject:
   m_ObjectHideFlags: 0
@@ -903,6 +921,7 @@ GameObject:
   - component: {fileID: 1381061451}
   - component: {fileID: 1381061455}
   - component: {fileID: 1381061454}
+  - component: {fileID: 1381061456}
   m_Layer: 7
   m_Name: Enemy
   m_TagString: Enemy
@@ -1007,7 +1026,11 @@ MonoBehaviour:
   flashMaterial: {fileID: 2100000, guid: 20d04c079eb254b429ec392486cd496e, type: 2}
   bloodEffect: {fileID: 4914264137798920212, guid: 78d555911ff3c8f4a8d7fdc64323ea08, type: 3}
   bloodSpawnPoint: {fileID: 0}
-  knockbackForce: 30.9
+  knockbackForce: 10
+  deathKnockbackMultiplier: 1.5
+  deathDelay: 0.5
+  shakeDuration: 0.2
+  shakeIntensity: 0.04
 --- !u!114 &1381061455
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1022,11 +1045,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   moveSpeed: 3
   detectionRange: 6
-  stopDistance: 1.5
+  stopDistance: 3.77
   playerLayer:
     serializedVersion: 2
     m_Bits: 8
   raycastOrigin: {fileID: 0}
+--- !u!114 &1381061456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1381061450}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abc7966a7929e444a9181fc82c7d4b33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  attackDamage: 10
+  attackRange: 6
+  attackCooldown: 1.5
+  attackSize: {x: 9, y: 6}
+  attackOffsetX: 0
+  attackOffsetY: 0
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 8
 --- !u!1 &1705354507
 GameObject:
   m_ObjectHideFlags: 0

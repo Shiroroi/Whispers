@@ -17,6 +17,7 @@ public class EnemyAI : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private Animator animator;
     private EnemyHealth enemyHealth;
+    private EnemyAttack enemyAttack;
     
     private bool playerDetected = false;
     private float distanceToPlayer;
@@ -101,13 +102,14 @@ public class EnemyAI : MonoBehaviour
             // Move towards player
             rb.linearVelocity = new Vector2(direction.x * moveSpeed, rb.linearVelocity.y);
             
+            // Flip sprite based on direction
             if (direction.x > 0)
             {
-                spriteRenderer.flipX = false; // Try this instead
+                spriteRenderer.flipX = false;
             }
             else if (direction.x < 0)
             {
-                spriteRenderer.flipX = true; // Try this instead
+                spriteRenderer.flipX = true;
             }
         }
         else
