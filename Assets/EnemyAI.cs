@@ -111,6 +111,7 @@ public class EnemyAI : MonoBehaviour
             {
                 spriteRenderer.flipX = true;
             }
+            
         }
         else
         {

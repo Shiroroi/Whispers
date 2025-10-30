@@ -5,116 +5,90 @@ public class EnemyAttack : MonoBehaviour
     [Header("Attack Settings")]
     public float attackDamage = 10f;
     public float attackRange = 1.5f;
-    public float attackCooldown = 1.5f;
-    private float lastAttackTime = -999f;
-    
-    [Header("Attack Hitbox")]
-    public Vector2 attackSize = new Vector2(1.5f, 1f);
-    public float attackOffsetX = 0.75f;
-    public float attackOffsetY = 0f;
-    
-    [Header("References")]
-    private Transform player;
-    private SpriteRenderer spriteRenderer;
-    private Animator animator;
+    public float attackCooldown = 1f;
+    public Vector2 attackSize = new Vector2(1f, 1f);
+    public Vector2 attackOffset = new Vector2(1f, 0f);
     public LayerMask playerLayer;
-    
-    private bool isAttacking = false;
-    
+
+    private float lastAttackTime;
+    private Transform player;
+    private Animator animator;
+    private SpriteRenderer spriteRenderer;
+    private EnemyAI enemyAI;
+
     void Start()
     {
-        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        player = GameObject.FindGameObjectWithTag("Player")?.transform;
         animator = GetComponentInChildren<Animator>();
-        
-        // Find player
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null)
-        {
-            player = playerObj.transform;
-        }
+        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        enemyAI = GetComponent<EnemyAI>();
     }
-    
+
     void Update()
     {
         if (player == null) return;
-        
-        // Check if player is in attack range
-        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
-        
-        if (distanceToPlayer <= attackRange && Time.time >= lastAttackTime + attackCooldown)
+
+        float distance = Vector2.Distance(transform.position, player.position);
+
+        // Check if player is within attack range and cooldown expired
+        if (distance <= attackRange && Time.time >= lastAttackTime + attackCooldown)
         {
+            lastAttackTime = Time.time;
             Attack();
         }
     }
-    
+
     void Attack()
     {
-        lastAttackTime = Time.time;
-        isAttacking = true;
-        
-        // Trigger attack animation if you have one
+        // Pick a random attack animation (1–5)
+        int attackIndex = Random.Range(1, 6);
         if (animator != null)
-        {
-            animator.SetTrigger("attack");
-        }
-        
-        // Perform attack hitbox check immediately
-        // If you want delay (for animation), call this from an Animation Event instead
+            animator.SetTrigger("Attack" + attackIndex);
+    }
+
+    // Called by animation event
+    public void OnAttacking()
+    {
         PerformAttackHit();
     }
-    
-    // Call this from Animation Event or directly
+
     public void PerformAttackHit()
     {
-        Vector2 attackPosition = transform.position;
-        
-        // Adjust offset based on sprite flip
-        float adjustedOffsetX = spriteRenderer.flipX ? -Mathf.Abs(attackOffsetX) : Mathf.Abs(attackOffsetX);
-        attackPosition.x += adjustedOffsetX;
-        attackPosition.y += attackOffsetY;
-        
-        // Check for player in attack area
-        Collider2D[] hitColliders = Physics2D.OverlapBoxAll(attackPosition, attackSize, 0f, playerLayer);
-        
-        foreach (Collider2D hitCollider in hitColliders)
+        if (spriteRenderer == null) return;
+
+        // Determine attack direction based on sprite flip
+        float direction = spriteRenderer.flipX ? -1f : 1f;
+
+        // Calculate mirrored hitbox position
+        Vector2 attackPos = (Vector2)transform.position + new Vector2(attackOffset.x * direction, attackOffset.y);
+
+        // Check collisions in hitbox
+        Collider2D[] hits = Physics2D.OverlapBoxAll(attackPos, attackSize, 0f, playerLayer);
+
+        foreach (var hit in hits)
         {
-            if (hitCollider.CompareTag("Player"))
+            if (hit.CompareTag("Player"))
             {
-                PlayerHealth playerHealth = hitCollider.GetComponent<PlayerHealth>();
-                
-                if (playerHealth != null)
+                PlayerHealth playerHealth = hit.GetComponent<PlayerHealth>();
+                if (playerHealth != null && !playerHealth.IsInvincible())
                 {
-                    // Calculate knockback direction (from enemy to player)
-                    Vector2 knockbackDirection = (hitCollider.transform.position - transform.position).normalized;
-                    
-                    // Deal damage
-                    playerHealth.TakeDamage(attackDamage, knockbackDirection);
-                    
-                    Debug.Log("Enemy hit player for " + attackDamage + " damage!");
+                    Vector2 knockbackDir = (hit.transform.position - transform.position).normalized;
+                    playerHealth.TakeDamage(attackDamage, knockbackDir);
                 }
             }
         }
-        
-        isAttacking = false;
     }
-    
-    // Visualize attack range in editor
+
+    // Debug visualization in Scene view
     void OnDrawGizmosSelected()
     {
-        // Draw attack range circle
+        if (spriteRenderer == null)
+            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+
+        float direction = spriteRenderer != null && spriteRenderer.flipX ? -1f : 1f;
+        Vector2 attackPos = (Vector2)transform.position + new Vector2(attackOffset.x * direction, attackOffset.y);
+
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, attackRange);
-        
-        // Draw attack hitbox
-        if (spriteRenderer != null)
-        {
-            Vector2 attackPosition = transform.position;
-            float adjustedOffsetX = spriteRenderer.flipX ? -Mathf.Abs(attackOffsetX) : Mathf.Abs(attackOffsetX);
-            attackPosition.x += adjustedOffsetX;
-            attackPosition.y += attackOffsetY;
-            
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireCube(attackPosition, attackSize);
-        }
+        Gizmos.DrawWireCube(attackPos, attackSize);
     }
 }
