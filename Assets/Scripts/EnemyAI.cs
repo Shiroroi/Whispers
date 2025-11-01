@@ -1,139 +1,123 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public class EnemyAI : MonoBehaviour
 {
-    [Header("Movement")]
-    public float moveSpeed = 3f;
-    public float detectionRange = 8f;
-    public float stopDistance = 1.5f; // Stop before reaching player
-    
-    [Header("Detection")]
-    public LayerMask playerLayer;
-    public Transform raycastOrigin; // Optional: assign a child transform for raycast origin
-    
+    [Header("Movement Settings")]
+    public float moveSpeed = 2f;
+    public float detectionRange = 5f;
+
     [Header("References")]
+    public Transform raycastOrigin;
     private Transform player;
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
     private Animator animator;
     private EnemyHealth enemyHealth;
     private EnemyAttack enemyAttack;
-    
-    private bool playerDetected = false;
-    private float distanceToPlayer;
-    
+
+    private bool playerDetected;
+    private bool isFacingRight = true;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         animator = GetComponentInChildren<Animator>();
         enemyHealth = GetComponent<EnemyHealth>();
-        
-        // Find player by tag
+        enemyAttack = GetComponent<EnemyAttack>();
+
+        // Get player
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
-        {
             player = playerObj.transform;
-        }
-        
-        // Use this transform as raycast origin if none assigned
+
         if (raycastOrigin == null)
-        {
             raycastOrigin = transform;
-        }
     }
-    
+
     void Update()
     {
+        if (enemyHealth != null && enemyHealth.isDead) return;
         if (player == null) return;
-        
+
         DetectPlayer();
-        
+
         if (playerDetected)
-        {
             FollowPlayer();
-        }
         else
-        {
-            // Idle when player not detected
-            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
-        }
-        
-        UpdateAnimation();
+            StopMovement();
     }
-    
+
     void DetectPlayer()
     {
-        distanceToPlayer = Vector2.Distance(transform.position, player.position);
-        
-        // Check if player is in range
-        if (distanceToPlayer <= detectionRange)
-        {
-            // Raycast to check if there's a clear line of sight
-            Vector2 direction = (player.position - raycastOrigin.position).normalized;
-            RaycastHit2D hit = Physics2D.Raycast(raycastOrigin.position, direction, detectionRange, playerLayer);
-            
-            // Debug line to visualize raycast
-            Debug.DrawRay(raycastOrigin.position, direction * detectionRange, Color.red);
-            
-            if (hit.collider != null && hit.collider.CompareTag("Player"))
-            {
-                playerDetected = true;
-            }
-            else
-            {
-                playerDetected = false;
-            }
-        }
+        Vector2 direction = player.position - transform.position;
+        float distance = direction.magnitude;
+
+        // simple detection range check
+        if (distance <= detectionRange)
+            playerDetected = true;
         else
-        {
             playerDetected = false;
-        }
+
+        Debug.DrawRay(raycastOrigin.position, direction.normalized * detectionRange, Color.red);
     }
-    
+
     void FollowPlayer()
     {
-        // Only move if not too close
-        if (distanceToPlayer > stopDistance)
+        if (enemyAttack == null || player == null) return;
+
+        Vector2 direction = (player.position - transform.position).normalized;
+        float distance = Vector2.Distance(transform.position, player.position);
+
+        // ⛔ stop moving when within attack range
+        if (distance > enemyAttack.attackRange)
         {
-            // Calculate direction to player
-            Vector2 direction = (player.position - transform.position).normalized;
-            
-            // Move towards player
-            rb.linearVelocity = new Vector2(direction.x * moveSpeed, rb.linearVelocity.y);
-            
-            // Flip sprite based on direction
-            if (direction.x > 0)
-            {
-                spriteRenderer.flipX = false;
-            }
-            else if (direction.x < 0)
-            {
-                spriteRenderer.flipX = true;
-            }
-            
+            rb.linearVelocity = direction * moveSpeed;
+            animator.SetBool("isWalking", true);
         }
         else
         {
-            // Stop moving when close enough
-            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+            StopMovement();
+        }
+
+        HandleFlip(direction.x);
+    }
+
+    void StopMovement()
+    {
+        rb.linearVelocity = Vector2.zero;
+        animator.SetBool("isWalking", false);
+    }
+
+    void HandleFlip(float directionX)
+    {
+        if (directionX > 0 && !isFacingRight)
+        {
+            isFacingRight = true;
+            spriteRenderer.flipX = false;
+        }
+        else if (directionX < 0 && isFacingRight)
+        {
+            isFacingRight = false;
+            spriteRenderer.flipX = true;
         }
     }
-    
-    void UpdateAnimation()
-    {
-        // Set walking animation based on velocity
-        bool isWalking = Mathf.Abs(rb.linearVelocity.x) > 0.1f;
-        animator.SetBool("isWalking", isWalking);
-    }
-    
-    // Visualize detection range in editor
+
     void OnDrawGizmosSelected()
     {
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, detectionRange);
-        
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, stopDistance);
+        if (raycastOrigin == null)
+            raycastOrigin = transform;
+
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(raycastOrigin.position, detectionRange);
+
+        // Show attack range if EnemyAttack exists
+        EnemyAttack ea = GetComponent<EnemyAttack>();
+        if (ea != null)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.position, ea.attackRange);
+        }
     }
 }

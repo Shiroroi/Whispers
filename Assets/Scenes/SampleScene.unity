@@ -1365,6 +1365,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   maxHealth: 100
+  isDead: 0
   flashDuration: 0.1
   flashMaterial: {fileID: 2100000, guid: 20d04c079eb254b429ec392486cd496e, type: 2}
   bloodEffect: {fileID: 4914264137798920212, guid: 78d555911ff3c8f4a8d7fdc64323ea08, type: 3}
@@ -1388,11 +1389,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   moveSpeed: 3
   detectionRange: 8.83
-  stopDistance: 5
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 8
-  raycastOrigin: {fileID: 0}
+  raycastOrigin: {fileID: 1381061453}
 --- !u!114 &1381061456
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1408,7 +1405,7 @@ MonoBehaviour:
   attackDamage: 10
   attackRange: 5.6
   attackCooldown: 1.5
-  attackSize: {x: 7.65, y: 6}
+  attackSize: {x: 9.7, y: 6}
   attackOffset: {x: 0, y: 0}
   playerLayer:
     serializedVersion: 2
@@ -1587,8 +1584,8 @@ SceneRoots:
   m_Roots:
   - {fileID: 519420032}
   - {fileID: 619394802}
+  - {fileID: 348319350}
   - {fileID: 1246034426}
   - {fileID: 867983069}
   - {fileID: 105615707}
   - {fileID: 1381061453}
-  - {fileID: 348319350}
