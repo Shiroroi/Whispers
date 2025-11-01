@@ -82,15 +82,6 @@ public class EnemyHealth : MonoBehaviour
             // Delay death so knockback can play out
             StartCoroutine(DelayedDeath());
         }
-        else
-        {
-            // Normal knockback for non-lethal hits (HORIZONTAL ONLY)
-            if (rb != null)
-            {
-                Vector2 horizontalKnockback = new Vector2(hitDirection.x, 0).normalized * knockbackForce;
-                rb.AddForce(horizontalKnockback, ForceMode2D.Impulse);
-            }
-        }
     }
     
     IEnumerator DamageFlash()

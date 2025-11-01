@@ -29,6 +29,8 @@ public class PlayerController : MonoBehaviour
     [Header("Attack Settings")]
     public bool isMeleeAttack;
     [Range(1,3)] public float attackSpeed = 1;
+    
+    private ParrySystem _parrySystem;
 
     private PlayerHealth _playerHealth;
 
@@ -43,10 +45,18 @@ public class PlayerController : MonoBehaviour
 
         if (_rb == null) Debug.LogError("Missing Rigidbody2D!");
         if (_animator == null) Debug.LogError("Missing Animator!");
+        
+        _parrySystem = GetComponent<ParrySystem>();
     }
 
     void Update()
     {
+        if (_parrySystem != null && _parrySystem.IsParrying())
+        {
+            // Don't allow movement during parry
+            return;
+        }
+        
         // Prevent input while knocked back or dashing
         if (_playerHealth != null && _playerHealth.IsKnockedBack())
             return;
