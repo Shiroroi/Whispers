@@ -59,7 +59,7 @@ public class PlayerHealth : MonoBehaviour
         isKnockedBack = true;
 
         // normalize direction and remove vertical knockback
-        Vector2 force = new Vector2(hitDirection.x, 0).normalized * knockbackForce;
+        Vector2 force = new Vector2(hitDirection.x, 0.5f).normalized * knockbackForce;
 
         // cancel current velocity before knockback
         rb.linearVelocity = Vector2.zero;
