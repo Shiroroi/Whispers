@@ -6,20 +6,21 @@ public class EnemyAttack : MonoBehaviour
     [Header("Attack Settings")]
     public float attackDamage = 10f;
     public float attackRange = 1.5f;
-    public float attackCooldown = 1f;   // Total time between attacks
+    public float attackCooldown = 1.5f;
     public Vector2 attackSize = new Vector2(1f, 1f);
     public Vector2 attackOffset = new Vector2(1f, 0f);
     public LayerMask playerLayer;
+    
+    [Header("Debug")]
+    public bool showDebugLogs = false;
 
-    [Header("References")]
+    private float lastAttackTime = -999f;
     private Transform player;
     private Animator animator;
     private SpriteRenderer spriteRenderer;
     private EnemyAI enemyAI;
     private AttackTelegraph attackTelegraph;
-
-    private bool isAttacking;
-    private float lastAttackEndTime;
+    private bool isAttacking = false;
 
     void Start()
     {
@@ -36,9 +37,10 @@ public class EnemyAttack : MonoBehaviour
 
         float distance = Vector2.Distance(transform.position, player.position);
 
-        // check if cooldown has finished and player in range
-        if (distance <= attackRange && Time.time >= lastAttackEndTime + attackCooldown)
+        // Only check once - when player FIRST enters range after cooldown
+        if (distance <= attackRange && Time.time >= lastAttackTime + attackCooldown && !isAttacking)
         {
+            // Immediately set flag to prevent double-triggering
             isAttacking = true;
             StartCoroutine(AttackSequence());
         }
@@ -46,52 +48,54 @@ public class EnemyAttack : MonoBehaviour
 
     IEnumerator AttackSequence()
     {
-        // stop AI movement
-        if (enemyAI != null) enemyAI.enabled = false;
-
-        // show telegraph (always consistent)
+        // isAttacking already set to true in Update()
+        
+        // Stop enemy movement during entire attack sequence
+        if (enemyAI != null)
+        {
+            enemyAI.enabled = false;
+        }
+        
+        // Show telegraph warning - WAIT FOR IT TO COMPLETE
         if (attackTelegraph != null)
-            yield return attackTelegraph.ShowTelegraph();
-        // ensure the telegraph visuals have truly finished
-        yield return new WaitUntil(() => !attackTelegraph.IsTelegraphActive);
-
-
-        // trigger attack animation (actual hit synced via Animation Event)
+        {
+            yield return StartCoroutine(attackTelegraph.ShowTelegraph());
+        }
+        
+        // NOW trigger attack animation after telegraph is done
         if (animator != null)
+        {
             animator.SetTrigger("Attack1");
-
-        // wait for animation to finish automatically
-        float animLength = GetAnimationLength("Attack1");
-        yield return new WaitForSeconds(animLength);
-
-        // resume AI and mark cooldown
+        }
+        
+        // Wait for animation to finish
+        yield return new WaitForSeconds(0.5f);
+        
+        // Set cooldown timer AFTER everything completes
+        lastAttackTime = Time.time;
+        
+        // Resume enemy movement
         if (enemyAI != null && gameObject != null)
+        {
             enemyAI.enabled = true;
-
-        lastAttackEndTime = Time.time;
+        }
+        
+        // Allow attacking again
         isAttacking = false;
     }
 
-    float GetAnimationLength(string stateName)
-    {
-        if (animator == null) return 0.5f;
-        var clips = animator.runtimeAnimatorController.animationClips;
-        foreach (var clip in clips)
-        {
-            if (clip.name == stateName)
-                return clip.length;
-        }
-        return 0.5f; // fallback
-    }
-
-    // Animation event calls this
+    // Called by animation event at the moment of impact
     public void PerformAttackHit()
     {
         if (spriteRenderer == null) return;
 
+        // Determine attack direction based on sprite flip
         float direction = spriteRenderer.flipX ? -1f : 1f;
+
+        // Calculate mirrored hitbox position
         Vector2 attackPos = (Vector2)transform.position + new Vector2(attackOffset.x * direction, attackOffset.y);
 
+        // Check collisions in hitbox
         Collider2D[] hits = Physics2D.OverlapBoxAll(attackPos, attackSize, 0f, playerLayer);
 
         foreach (var hit in hits)
@@ -100,15 +104,24 @@ public class EnemyAttack : MonoBehaviour
             {
                 PlayerHealth playerHealth = hit.GetComponent<PlayerHealth>();
                 ParrySystem parrySystem = hit.GetComponent<ParrySystem>();
-
+                
                 if (parrySystem != null)
                 {
+                    // Calculate knockback direction (from enemy to player)
                     Vector2 knockbackDir = (hit.transform.position - transform.position).normalized;
+                    
+                    // Try to parry
                     bool playerGetsKnockedBack;
                     bool parried = parrySystem.TryParry(gameObject, knockbackDir, out playerGetsKnockedBack);
-                    if (parried) return; // parry successful, cancel damage
+                    
+                    if (parried)
+                    {
+                        Debug.Log("Attack was parried!");
+                        return; // Exit - attack was parried
+                    }
                 }
-
+                
+                // If not parried, deal damage normally
                 if (playerHealth != null && !playerHealth.IsInvincible())
                 {
                     Vector2 knockbackDir = (hit.transform.position - transform.position).normalized;
@@ -118,6 +131,7 @@ public class EnemyAttack : MonoBehaviour
         }
     }
 
+    // Debug visualization in Scene view
     void OnDrawGizmosSelected()
     {
         if (spriteRenderer == null)
@@ -128,7 +142,8 @@ public class EnemyAttack : MonoBehaviour
 
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(attackPos, attackSize);
-
+        
+        // Draw attack range
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, attackRange);
     }
